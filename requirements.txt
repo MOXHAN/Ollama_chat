@@ -2,4 +2,4 @@ streamlit
 ollama
 pyaudio
 openai
-dotenv
+python-dotenv
