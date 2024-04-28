@@ -58,7 +58,7 @@ def ollama_generator_tts(audio_player, messages: Dict) -> Generator:
             # Add buffered text to TTS queue
             audio_player.add_to_queue(buffer_txt)
             # Reset buffer after sending to TTS
-            buffer_txt = ""
+            buffer_txt =""
 
         yield chunk['message']['content']
 
@@ -85,30 +85,32 @@ with st.sidebar:
 
     # Add field to enter API key
     api_key = st.text_input("OpenAI API Key", type="password")
-    if "api_key" not in st.session_state:
-        load_dotenv()
+
+    # If TTS mode was toggled
+    if st.session_state.tts:
         # set api key depending on whether it is provided in the .env file or the field
-        if not os.getenv("OPENAI_API_KEY"):
-            st.session_state.api_key = api_key
-        else:
-            st.session_state.api_key = os.getenv("OPENAI_API_KEY")
+        if "api_key" not in st.session_state:
+            load_dotenv()
+            if not os.getenv("OPENAI_API_KEY"):
+                st.session_state.api_key = api_key
+            else:
+                st.session_state.api_key = os.getenv("OPENAI_API_KEY")
+
+        # Initialize OpenAI client using api key
+        if "client" not in st.session_state:
+            try:
+                st.session_state.client = OpenAI(api_key=st.session_state.api_key)
+            except Exception as e:
+                with st.chat_message("assistant"):
+                    st.markdown(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file or field on the sidebar.")
+    
+        # initialize audio player
+        if "audio_player" not in st.session_state:
+            st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if st.session_state.tts:
-    # Initialize OpenAI client
-    if "client" not in st.session_state:
-        try:
-            st.session_state.client = OpenAI(api_key=st.session_state.api_key)
-        except Exception as e:
-            with st.chat_message("assistant"):
-                st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file or field on the sidebar.")
-    
-    # initialize audio player
-    if "audio_player" not in st.session_state:
-        st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
