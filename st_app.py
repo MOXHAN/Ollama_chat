@@ -46,23 +46,35 @@ class AudioPlayer(threading.Thread):
 
 #################### Ollama Generator Function ####################
 
-def ollama_generator(audio_player, messages: Dict) -> Generator:
+def ollama_generator(audio_player, tts_mode, messages: Dict) -> Generator:
     stream = ollama.chat(
         model="llama3", messages=messages, stream=True)
     buffer_txt = ""  # Buffer to store text before sending to TTS
     for chunk in stream:
-        # Buffer the message content
-        buffer_txt += chunk['message']['content']
-        # Check for full stops or other suitable points to split the text
-        if buffer_txt and (buffer_txt.endswith(('.', '!', '?')) or chunk.get("done", False)):
-            audio_player.add_to_queue(buffer_txt)  # Add buffered text to TTS queue
-            buffer_txt = ""  # Reset buffer after sending to TTS
+        # Only queue the message content if TTS mode is enabled
+        if tts_mode:
+            audio_player.add_to_queue(chunk['message']['content'])
+            # Buffer the message content
+            buffer_txt += chunk['message']['content']
+            # Check for full stops or other suitable points to split the text
+            if buffer_txt and (buffer_txt.endswith(('.', '!', '?')) or chunk.get("done", False)):
+                # Add buffered text to TTS queue
+                audio_player.add_to_queue(buffer_txt)
+                # Reset buffer after sending to TTS
+                buffer_txt = ""
 
         yield chunk['message']['content']
 
 #################### Streamlit code ####################
 
 st.title("Llocal LLama")
+
+if "tts" not in st.session_state:
+    st.session_state.tts = False
+
+# Toggle TTS mode depending on button press
+if st.button("Toggle TTS"):
+    st.session_state.tts = not st.session_state.tts
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -89,6 +101,6 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.write_stream(ollama_generator(st.session_state.audio_player, st.session_state.messages))
+        response = st.write_stream(ollama_generator(st.session_state.audio_player, st.session_state.tts, st.session_state.messages))
         
         st.session_state.messages.append({"role": "assistant", "content": response})
