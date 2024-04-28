@@ -73,24 +73,32 @@ if "tts" not in st.session_state:
     st.session_state.tts = False
 
 # Toggle TTS mode depending on button press
-if st.button("Toggle TTS"):
-    st.session_state.tts = not st.session_state.tts
+with st.sidebar:
+    if st.button("Toggle TTS"):
+        st.session_state.tts = not st.session_state.tts
+
+    # Add field to enter API key
+    api_key = st.text_input("OpenAI API Key", type="password")
+    if "api_key" not in st.session_state:
+        st.session_state.api_key = api_key
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Initialize OpenAI client
-if "client" not in st.session_state and st.session_state.tts_mode:
-    load_dotenv()
-    try:
-        st.session_state.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    except Exception as e:
-        with st.chat_message("assistant"):
-            st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file.")
-
-if "audio_player" not in st.session_state:
-    st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
+if st.session_state.tts:
+    # Initialize OpenAI client
+    if "client" not in st.session_state:
+        load_dotenv()
+        try:
+            st.session_state.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        except Exception as e:
+            with st.chat_message("assistant"):
+                st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file.")
+    
+    # initialize audio player
+    if "audio_player" not in st.session_state:
+        st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -106,6 +114,9 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.write_stream(ollama_generator(st.session_state.audio_player, st.session_state.tts, st.session_state.messages))
+        if st.session_state.tts:
+            response = st.write_stream(ollama_generator(st.session_state.audio_player, st.session_state.tts, st.session_state.messages))
+        else:
+            response = st.write_stream(ollama_generator(None, st.session_state.tts, st.session_state.messages))
         
         st.session_state.messages.append({"role": "assistant", "content": response})
