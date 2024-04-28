@@ -1,5 +1,4 @@
 streamlit
 ollama
-pyaudio
 openai
 python-dotenv
