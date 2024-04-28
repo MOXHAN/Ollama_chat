@@ -44,25 +44,31 @@ class AudioPlayer(threading.Thread):
     def add_to_queue(self, text):
         self.queue.put(text)
 
-#################### Ollama Generator Function ####################
+#################### Ollama Generator Function using TTS ####################
 
-def ollama_generator(audio_player, tts_mode, messages: Dict) -> Generator:
+def ollama_generator_tts(audio_player, messages: Dict) -> Generator:
     stream = ollama.chat(
         model="llama3", messages=messages, stream=True)
     buffer_txt = ""  # Buffer to store text before sending to TTS
     for chunk in stream:
-        # Only queue the message content if TTS mode is enabled
-        if tts_mode:
-            audio_player.add_to_queue(chunk['message']['content'])
-            # Buffer the message content
-            buffer_txt += chunk['message']['content']
-            # Check for full stops or other suitable points to split the text
-            if buffer_txt and (buffer_txt.endswith(('.', '!', '?')) or chunk.get("done", False)):
-                # Add buffered text to TTS queue
-                audio_player.add_to_queue(buffer_txt)
-                # Reset buffer after sending to TTS
-                buffer_txt = ""
+        # Buffer the message content
+        buffer_txt += chunk['message']['content']
+        # Check for full stops or other suitable points to split the text
+        if buffer_txt and (buffer_txt.endswith(('.', '!', '?')) or chunk.get("done", False)):
+            # Add buffered text to TTS queue
+            audio_player.add_to_queue(buffer_txt)
+            # Reset buffer after sending to TTS
+            buffer_txt = ""
 
+        yield chunk['message']['content']
+
+#################### Ollama Generator Function ####################
+
+def ollama_generator( messages: Dict) -> Generator:
+    stream = ollama.chat(
+        model="llama3", messages=messages, stream=True)
+    
+    for chunk in stream:
         yield chunk['message']['content']
 
 #################### Streamlit code ####################
@@ -80,7 +86,12 @@ with st.sidebar:
     # Add field to enter API key
     api_key = st.text_input("OpenAI API Key", type="password")
     if "api_key" not in st.session_state:
-        st.session_state.api_key = api_key
+        load_dotenv()
+        # set api key depending on whether it is provided in the .env file or the field
+        if not os.getenv("OPENAI_API_KEY"):
+            st.session_state.api_key = api_key
+        else:
+            st.session_state.api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -89,12 +100,11 @@ if "messages" not in st.session_state:
 if st.session_state.tts:
     # Initialize OpenAI client
     if "client" not in st.session_state:
-        load_dotenv()
         try:
-            st.session_state.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            st.session_state.client = OpenAI(api_key=st.session_state.api_key)
         except Exception as e:
             with st.chat_message("assistant"):
-                st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file.")
+                st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file or field on the sidebar.")
     
     # initialize audio player
     if "audio_player" not in st.session_state:
@@ -115,8 +125,8 @@ if prompt := st.chat_input("What is up?"):
 
     with st.chat_message("assistant"):
         if st.session_state.tts:
-            response = st.write_stream(ollama_generator(st.session_state.audio_player, st.session_state.tts, st.session_state.messages))
+            response = st.write_stream(ollama_generator_tts(st.session_state.audio_player, st.session_state.messages))
         else:
-            response = st.write_stream(ollama_generator(None, st.session_state.tts, st.session_state.messages))
+            response = st.write_stream(ollama_generator(st.session_state.messages))
         
         st.session_state.messages.append({"role": "assistant", "content": response})
