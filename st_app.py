@@ -80,9 +80,14 @@ if st.button("Toggle TTS"):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "client" not in st.session_state:
+# Initialize OpenAI client
+if "client" not in st.session_state and st.session_state.tts_mode:
     load_dotenv()
-    st.session_state.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    try:
+        st.session_state.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    except Exception as e:
+        with st.chat_message("assistant"):
+            st.write(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file.")
 
 if "audio_player" not in st.session_state:
     st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
