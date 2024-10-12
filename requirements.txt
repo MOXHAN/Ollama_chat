@@ -2,3 +2,4 @@ streamlit
 ollama
 openai
 python-dotenv
+chromadb
