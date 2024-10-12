@@ -1,4 +1,4 @@
-# LLM-Chat Application using Ollama and Streamlit
+# LLM-Chat Application using Ollama and Streamlit with simple RAG
 
 Using Ollama, running LLMs locally becomes very easy. Ollama offers many Open-Source LLMs, which can be downloaded.
 Because Ollama itself only offers a Server + Client or Terminal Interface, I wanted to create a simple chat GUI using Streamlit.
