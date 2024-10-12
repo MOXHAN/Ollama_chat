@@ -7,6 +7,7 @@ import pyaudio
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+from embeddings import createMarkdownEmbeddings, initChroma
 
 #################### Audio Player Class ####################
 
@@ -64,7 +65,33 @@ def ollama_generator_tts(audio_player, messages: Dict) -> Generator:
 
 #################### Ollama Generator Function ####################
 
-def ollama_generator( messages: Dict) -> Generator:
+def ollama_generator( messages: Dict, collection) -> Generator:
+
+    # get current prompt
+    currentPrompt = messages[-1]["content"]
+
+    # generate an embedding for the prompt
+    response = ollama.embeddings(
+        prompt=currentPrompt,
+        model="all-minilm"
+    )
+    # retrieve the most relevant doc
+    results = collection.query(
+        query_embeddings=[response["embedding"]],
+        n_results=1
+    )
+    # get the data from results
+    try:
+        data = results['documents'][0][0]
+
+        # add the retrieved doc-information to the prompt
+        modifiedPrompt = f"Using this data: {data}. Respond to this prompt: {currentPrompt}"
+        # write modified prompt back to the messages dict
+        messages[-1]["content"] = modifiedPrompt
+
+    except:
+        print("No relevant data found")
+    
     stream = ollama.chat(
         model="llama3", messages=messages, stream=True)
     
@@ -73,62 +100,82 @@ def ollama_generator( messages: Dict) -> Generator:
 
 #################### Streamlit code ####################
 
-st.title("Llocal LLama")
-
-if "tts" not in st.session_state:
-    st.session_state.tts = False
-
-# Toggle TTS mode depending on button press
-with st.sidebar:
-    if st.button("Toggle TTS"):
-        st.session_state.tts = not st.session_state.tts
-
-    # Add field to enter API key
-    api_key = st.text_input("OpenAI API Key", type="password")
-
-    # If TTS mode was toggled
-    if st.session_state.tts:
-        # set api key depending on whether it is provided in the .env file or the field
-        if "api_key" not in st.session_state:
-            load_dotenv()
-            if not os.getenv("OPENAI_API_KEY"):
-                st.session_state.api_key = api_key
-            else:
-                st.session_state.api_key = os.getenv("OPENAI_API_KEY")
-
-        # Initialize OpenAI client using api key
-        if "client" not in st.session_state:
-            try:
-                st.session_state.client = OpenAI(api_key=st.session_state.api_key)
-            except Exception as e:
-                with st.chat_message("assistant"):
-                    st.markdown(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file or field on the sidebar.")
+def streamlit_app():
     
-        # initialize audio player
-        if "audio_player" not in st.session_state:
-            st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
+    st.title("Llocal LLama")
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    if "tts" not in st.session_state:
+        st.session_state.tts = False
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # Toggle TTS mode depending on button press
+    with st.sidebar:
+        if st.button("Toggle TTS"):
+            st.session_state.tts = not st.session_state.tts
 
-# Accept user input
-if prompt := st.chat_input("What is up?"):
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    # Display user message in chat message container
-    with st.chat_message("user"):
-        st.markdown(prompt)
+        # Add field to enter API key
+        api_key = st.text_input("OpenAI API Key", type="password")
 
-    with st.chat_message("assistant"):
+        # If TTS mode was toggled
         if st.session_state.tts:
-            response = st.write_stream(ollama_generator_tts(st.session_state.audio_player, st.session_state.messages))
-        else:
-            response = st.write_stream(ollama_generator(st.session_state.messages))
+            # set api key depending on whether it is provided in the .env file or the field
+            if "api_key" not in st.session_state:
+                load_dotenv()
+                if not os.getenv("OPENAI_API_KEY"):
+                    st.session_state.api_key = api_key
+                else:
+                    st.session_state.api_key = os.getenv("OPENAI_API_KEY")
+
+            # Initialize OpenAI client using api key
+            if "client" not in st.session_state:
+                try:
+                    st.session_state.client = OpenAI(api_key=st.session_state.api_key)
+                except Exception as e:
+                    with st.chat_message("assistant"):
+                        st.markdown(f"Error: {e}\n You did not provide a valid OpenAI API key. Please provide a valid API key in the .env file or field on the sidebar.")
         
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            # initialize audio player
+            if "audio_player" not in st.session_state:
+                st.session_state.audio_player = AudioPlayer(client=st.session_state.client)
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Accept user input
+    if prompt := st.chat_input("What is up?"):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            if st.session_state.tts:
+                response = st.write_stream(ollama_generator_tts(st.session_state.audio_player, st.session_state.messages))
+            else:
+                response = st.write_stream(ollama_generator(st.session_state.messages, st.session_state["collection"]))
+            
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+def main():
+
+    # only create embeddings once
+    if "collection" not in st.session_state:
+        # create embeddings for all markdown files in the directory
+        collection = createMarkdownEmbeddings()
+        st.session_state.collection = collection
+    
+
+    # start the streamlit app
+    streamlit_app()
+
+
+if __name__ == "__main__":
+
+    main()
