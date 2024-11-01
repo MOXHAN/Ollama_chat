@@ -28,7 +28,7 @@ def storeEmbeddings(collection):
     for filename, content in getMarkdownFiles():
         try:
             # create and get embeddings for each document
-            response = ollama.embeddings(model="all-minilm", prompt=content)
+            response = ollama.embeddings(model="nomic-embed-text", prompt=content)
             embedding = response["embedding"]
 
             # store the document embedding in the database
