@@ -43,7 +43,7 @@ def ollama_generator( messages: Dict, collection) -> Generator:
         print("No relevant data found")
     
     stream = ollama.chat(
-        model="llama3", messages=messages, stream=True)
+        model=st.session_state.llm, messages=messages, stream=True)
     
     for chunk in stream:
         yield chunk['message']['content']
@@ -54,12 +54,18 @@ def streamlit_app():
     
     st.title("Llocal LLama")
 
-    if "tts" not in st.session_state:
-        st.session_state.tts = False
+    # Init used LLM
+    if "model" not in st.session_state:
+        st.session_state.llm = "llama3"
 
     # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
+
+    # Add sidebar menu to choose LLM model
+    with st.sidebar:
+        llm = st.selectbox("Select Model", ["llama3", "llama3.2:1b", "gemma2:2b","phi 3.5"])
+        st.session_state.llm = llm
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
