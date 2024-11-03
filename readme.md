@@ -1,4 +1,38 @@
-# **Introduction**
+# **Installation and Setup**
+
+**Requirements:**
+
+1. Docker
+2. Ollama
+
+**Ollama**
+
+To run the LLM models locally, I used Ollama in this project. Both windows and macOS apps are available, running Ollama in WSL or Docker also works. After installing Ollama, the models are served by default under the port 11434. This is what the API in this project expects. If you are already using this port or for example the port from the Ollama Docker Container isnt exposed, you need to make changes accordingly. That said, the most simple way is using the downloadable apps. Ollama: https://ollama.com/download
+
+To use any model, you first need to download it. If you install Ollama through the app or in WSL you can use the CLI (command-line interface) of ollama and pull the models like so:
+
+````
+ollama pull gemma2:2b
+````
+
+After that, the models are ready to go. You can also test the models in the CLI by running the following command:
+
+````
+ollama run gemma2:2b
+````
+
+And finally, you can check the correct setup and availability of the API under the correct port by going to localhost:11434 in your browser. It should say "Ollam is running".
+
+**Project setup**
+
+1. Clone the repo
+2. Create an .env file and write "DIRECTORY=path/to/your/obsidian/vault", to test with the provided notes it would be "DIRECTORY=notes"
+3. Either directly run the command "streamlit run st_app.py" to run the code from within your file-system
+4. Or build the docker image "docker build -t ollama_chat ."  and run the container "docker run ollama_chat"
+5. Go to localhost:8501 where the streamlit-GUI can be found
+6. Choose an installed model in the sidebar and start chatting!
+
+# **Project Introduction**
 
 This project aims to leverage existing personal notes of various topics using Large Language Models (LLMs). The notes are available in markdown format and therefore easily readable for both machines and humans in raw format. However, the main usage in this projects scenario is through the note-taking app Obsidian (LINK HERE).
 
