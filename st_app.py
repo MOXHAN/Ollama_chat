@@ -1,10 +1,6 @@
 import streamlit as st
 import ollama
 from typing import Dict, Generator
-import threading
-import queue
-import pyaudio
-from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from embeddings import createMarkdownEmbeddings, initChroma
