@@ -20,6 +20,8 @@ A major challenge is the prompt engineering, which describes writing the best pr
 1. I only want it to use my notes, if it actually fits the question and is useful and otherwise fall back to its own general knowledge
 2. I want the LLM to tell me what source it used (my notes or its own knowledge)
 
+To find a prompt that leads the LLM to answer both points, I used ChatGPT 4o as help and came up with the following prompt: "Answer the following question based on the provided notes, if relevant and available, otherwise use your own knowledge to provide an accurate response. After answering, indicate the source by specifying either 'from notes' or 'from general knowledge'. Here’s the question:"
+
 ### 2. Evaluation
 
 To evaluate a LLM is a difficult task, as there are no simple metrics like accuracy. Thus I will evaluate the entire RAG-workflow, so the LLM + embedding model, especially for my use case, meaning how useful is it really. To do this in the best possible way, I came up with the following questions I will evaluate the workflow on:
@@ -110,6 +112,8 @@ The following observations are **heavily biased** and were written based on my (
 ## **III. Conclusion / Personal Opinion**
 
 First of all, it is important to mention that the RAG-Workflow "failed" multiple times, as shown above and provided unmatching content to the LLMs, although the embedding model and the content or the questions werent changed throughout the testing. Therefore the testing environment wasnt always the same to a hundred percent, even if no changes to the code or system were made. However, I inted this project to be useful for the end-user (myself) and therefore want to evaluate the experience the user has when using the system. "Pressing out" the last possible points a model can reach is not serving the purpose of this project, but evaluating first-try experience is.
+
+The prompt used is another crucial part of the RAG-workflow, along with the correct retrieval of embeddings. As explained in the Introduction, I wanted the LLM to fulfill two major guidelines: first, to stick to my notes and only fall back to its own knowledge if necessary and second, to always provide a source. While all models fulfilled the second task in every response, it was often untrue. As listed in the observations, some models, like Gemma2, often mixed the knowledge from my notes and their own knowledge, but still stated the source to be my notes. This is rather unsatisfying. Furthermore, a clear line between own and provided knowledge cant be drawn. Therefore the models cant be evaluated in a comprehensive way for this matter. This is also the case for the first guideline. It is difficult to determine, wether it was necessary or not, in cases where the model mixed-in its own knowledge. For the prompt, I can simply conclude that all models always provide a source, wether it is true or not and the first guideline is very "flexible", making an evaluation very difficult. Further prompt-engineering could lead to the models sticking closer to the rules, but also effect the user-experience.
 
 To sum it up, based on the provided scoring and the observations, **my personal favorite and the overall best experience I had with Gemma2 2B.**
 
