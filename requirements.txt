@@ -1,5 +1,6 @@
 streamlit
 ollama
-openai
 python-dotenv
 chromadb
+pandas
+openpyxl
