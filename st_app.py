@@ -64,7 +64,7 @@ def streamlit_app():
 
     # Add sidebar menu to choose LLM model
     with st.sidebar:
-        llm = st.selectbox("Select Model", ["llama3", "llama3.2:1b", "gemma2:2b","phi 3.5"])
+        llm = st.selectbox("Select Model", ["llama3", "llama3.2:1b", "gemma2:2b","phi3.5"])
         st.session_state.llm = llm
 
     # Display chat messages from history on app rerun
