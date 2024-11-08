@@ -1,9 +1,15 @@
 import chromadb
 import ollama
 import os
+from dotenv import load_dotenv
 
-def getMarkdownFiles(directory=os.getenv("DIRECTORY")):
-    
+def getMarkdownFiles(directory="notes"):
+
+    load_dotenv()
+
+    if os.getenv("DIRECTORY"):
+        directory = os.getenv("DIRECTORY")
+        
     for root, dirs, files in os.walk(directory):
         for filename in files:
             if filename.endswith(".md"):
