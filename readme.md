@@ -42,7 +42,7 @@ and run the container
 ````
 docker run --net=host ollama_chat
 ````
-**IMPORTANT:** If you are using the docker container with Docker Desktop, you need to "Ènable Host Network" in the Ressources - Network settings, which is only avaiable from version >=4.32.0. This lets the container use the host machines network and therefore access the ollama API.
+**IMPORTANT:** If you are using the docker container with Docker Desktop, you need to "Enable Host Network" in the "Ressources - Network" settings, which is only available from version >=4.32.0. This lets the container use the host machines network and therefore access the ollama API.
 
 5. Go to localhost:8501 where the streamlit-GUI can be found
 6. Choose an installed model in the sidebar and start chatting!
