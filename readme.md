@@ -15,6 +15,12 @@ To use any model, you first need to download it. If you install Ollama through t
 ollama pull gemma2:2b
 ````
 
+Aside the LLM, you also need to pull the embedding model used in this project:
+
+````
+ollama pull nomic-embed-text
+````
+
 After that, the models are ready to go. You can also test the models in the CLI by running the following command:
 
 ````
@@ -28,7 +34,16 @@ And finally, you can check the correct setup and availability of the API under t
 1. Clone the repo
 2. Create an .env file and write "DIRECTORY=path/to/your/obsidian/vault", to test with the provided notes it would be "DIRECTORY=notes"
 3. Either directly run the command "streamlit run st_app.py" to run the code from within your file-system
-4. Or build the docker image "docker build -t ollama_chat ."  and run the container "docker run ollama_chat"
+4. Or build the docker image
+````
+docker build -t ollama_chat .
+````
+and run the container
+````
+docker run --net=host ollama_chat
+````
+**IMPORTANT:** If you are using the docker container with Docker Desktop, you need to "Ènable Host Network" in the Ressources - Network settings, which is only avaiable from version >=4.32.0. This lets the container use the host machines network and therefore access the ollama API.
+
 5. Go to localhost:8501 where the streamlit-GUI can be found
 6. Choose an installed model in the sidebar and start chatting!
 
